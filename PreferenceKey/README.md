@@ -1,0 +1,261 @@
+#  PreferenceKey
+
+### Basic
+
+```swift
+import SwiftUI
+
+struct PreferenceKeyBootcamp: View {
+    
+    @State private var text = "hello world"
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+//                SecondaryScreen(text: self.text)
+//                    .navigationTitle("Navigation Title")
+//                    .customTitle(text: "New Value!!!")
+//                    .preference(key: CustomTitlePreferenceKey.self, value: "NEW VALUE")
+                
+                ThirdScreen(text: self.text)
+            }
+        }
+        // WATCHING IT
+        .onPreferenceChange(CustomTitlePreferenceKey.self) { value in
+            self.text = value
+        }
+    }
+}
+
+extension View {
+    
+    func customTitle(text: String) -> some View {
+        self
+            .preference(key: CustomTitlePreferenceKey.self, value: text)
+    }
+    
+}
+
+
+struct SecondaryScreen: View {
+    
+    let text: String
+    
+    var body: some View {
+        Text(self.text)
+    }
+    
+}
+
+struct CustomTitlePreferenceKey: PreferenceKey {
+    
+    static var defaultValue: String = ""
+    
+    static func reduce(value: inout String, nextValue: () -> String) {
+        value = nextValue()
+    }
+    
+}
+
+/// ---------------------
+struct ThirdScreen: View {
+    
+    let text: String
+    @State private var newValue = ""
+    
+    var body: some View {
+        Text(self.text)
+            .onAppear {
+                self.getDataFromDatabase()
+            }
+            .customTitle(text: self.newValue)
+    }
+    
+    func getDataFromDatabase() {
+        
+        // download
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.newValue = "NEW VALUE FROM DATABASE"
+        }
+        
+    }
+    
+}
+
+```
+
+## Read Size
+
+```swift
+import SwiftUI
+
+struct GeometryPreferenceKeyBootcamp: View {
+    
+    @State private var rectSize: CGSize = .zero
+    
+    var body: some View {
+        VStack {
+            Spacer()
+            Text("Hello World")
+                .frame(width: self.rectSize.width, height: self.rectSize.height)
+                .background(Color.blue)
+            Spacer()
+            HStack {
+                Rectangle()
+                GeometryReader { geo in
+                    Rectangle()
+                        .updateRectangleGeoSize(geo.size)
+                        .overlay(
+                            Text("\(geo.size.width)")
+                                .foregroundColor(.white)
+                        )
+                }
+                Rectangle()
+            }
+            .frame(height: 55)
+        }
+        .onPreferenceChange(RectangleGeometryPreferenceKey.self) { value in
+            self.rectSize = value
+        }
+    }
+}
+
+extension View {
+    
+    func updateRectangleGeoSize(_ size: CGSize) -> some View {
+        self
+            .preference(key: RectangleGeometryPreferenceKey.self, value: size)
+    }
+    
+}
+
+struct RectangleGeometryPreferenceKey: PreferenceKey {
+    
+    static var defaultValue: CGSize = .zero
+    
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+    
+}
+
+```
+
+## ScrollView Offset
+
+```swift
+import SwiftUI
+
+struct ScrollViewOffsetPrefenrenceKey: PreferenceKey {
+    
+    static var defaultValue: CGFloat = 0
+    
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+    
+}
+
+extension View {
+    
+    // read current view's x offset relative to UIScreen from the scroll view
+    func onScrollViewYOffsetChanged(action: @escaping(_ offset: CGFloat) -> Void) -> some View {
+        self
+            .background(
+                GeometryReader { geo in
+                    // Get the exact offset of title view
+                    Color
+                        .clear
+                        .preference(key: ScrollViewOffsetPrefenrenceKey.self, value: geo.frame(in: .global).minY)
+                }
+            )
+            .onPreferenceChange(ScrollViewOffsetPrefenrenceKey.self) { value in
+                action(value)
+            }
+    }
+    
+    // read current view's y offset relative to UIScreen from the scroll view
+    func onScrollViewXOffsetChanged(action: @escaping(_ offset: CGFloat) -> Void) -> some View {
+        self
+            .background(
+                GeometryReader { geo in
+                    // Get the exact offset of title view
+                    Color
+                        .clear
+                        .preference(key: ScrollViewOffsetPrefenrenceKey.self, value: geo.frame(in: .global).minX)
+                }
+            )
+            .onPreferenceChange(ScrollViewOffsetPrefenrenceKey.self) { value in
+                action(value)
+            }
+    }
+    
+}
+
+struct ScrollViewOffsetPreferenceKeyBootcamp: View {
+    
+    let title: String = "New Title Here!!!"
+    @State private var scrollViewOffset: CGFloat = 0
+    
+    var body: some View {
+    
+        ScrollView {
+            VStack {
+                self.titleLayer
+                    // Fade Effect
+                    .opacity(Double(self.scrollViewOffset) / 63.0)
+                    .onScrollViewYOffsetChanged { offset in
+                        self.scrollViewOffset = offset
+                    }
+                
+                self.contentLayer
+            }
+            .padding()
+        }
+        .overlay(
+            Text("\(self.scrollViewOffset)")
+        )
+        .overlay(
+            self.navBarLayer
+                .opacity(self.scrollViewOffset < 40 ? 1.0 : 0.0)
+            ,alignment: .top
+        )
+        .animation(.default, value: self.scrollViewOffset)
+        
+    }
+}
+
+struct ScrollViewOffsetPreferenceKeyBootcamp_Previews: PreviewProvider {
+    static var previews: some View {
+        ScrollViewOffsetPreferenceKeyBootcamp()
+    }
+}
+
+extension ScrollViewOffsetPreferenceKeyBootcamp {
+    
+    private var titleLayer: some View {
+        Text(self.title)
+            .font(.largeTitle)
+            .fontWeight(.semibold)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    private var contentLayer: some View {
+        ForEach(0..<30) { _  in
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.red.opacity(0.3))
+                .frame(width: 300, height: 300)
+        }
+    }
+    
+    private var navBarLayer: some View {
+        Text(self.title)
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .frame(height: 55)
+            .background(Color.blue)
+    }
+    
+}
+
+```
