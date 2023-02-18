@@ -9,9 +9,21 @@ import SwiftUI
 
 @main
 struct AdvancedApp: App {
+
+    let currentUserIsSignedIn: Bool
+    
+    init() {
+//        let userIsSignedIn: Bool = CommandLine.arguments.contains("-UITest_startSignedIn") ? true : false
+//        let userIsSignedIn: Bool = ProcessInfo.processInfo.arguments.contains("-UITest_startSignedIn") ? true : false
+        let value = ProcessInfo.processInfo.environment["-UITest_startSignedIn2"] == "true" ? true : false
+        
+        self.currentUserIsSignedIn = value
+        print("current user signed in: \(self.currentUserIsSignedIn)")
+    }
+    
     var body: some Scene {
         WindowGroup {
-            UIViewRepresentableBootcamp()
+            UITestingBootcampView(currentUserIsSignedIn: self.currentUserIsSignedIn)
         }
     }
 }
