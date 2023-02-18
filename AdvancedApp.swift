@@ -12,7 +12,8 @@ struct AdvancedApp: App {
 
     var body: some Scene {
         WindowGroup {
-            CloudKitUserBootcamp()
+//            CloudKitPushNotificationBootcamp()
+            CloudKitCRUDBootcamp()
         }
     }
     
